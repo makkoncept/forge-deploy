@@ -11,7 +11,7 @@ authors = [
 description = "A CLI tool to automate QA deployments for forge environments"
 readme = "README.md"
 requires-python = ">=3.7"
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
