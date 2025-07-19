@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forge-deploy"
+version = "0.1.0"
+authors = [
+    {name = "Mayank Nader", email = "mayank.n@hiverhq.com"},
+]
+description = "A CLI tool to automate QA deployments for forge environments"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+dependencies = [
+    "click>=8.0.0",
+    "PyYAML>=6.0",
+    "GitPython>=3.1.0",
+    "requests>=2.28.0",
+    "urllib3<2.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mayank-hiver/forge-deploy"
+"Bug Reports" = "https://github.com/mayank-hiver/forge-deploy/issues"
+"Source" = "https://github.com/mayank-hiver/forge-deploy"
+
+[project.scripts]
+forge-deploy = "forge_deploy.main:deploy"
+
+[tool.setuptools.packages.find]
+include = ["forge_deploy*"]
