@@ -1,6 +1,7 @@
 import requests
 import time
 import re
+from datetime import datetime, timezone
 
 class GitHubClient:
     def __init__(self, token):
@@ -13,29 +14,45 @@ class GitHubClient:
         self.hot_api_repo = "Grexit/hot-api-mono"
         self.qa_env_repo = "Grexit/qa-env"
     
-    def monitor_qa_build(self, branch: str) -> str:        
-        print(f"Looking for 'qa build' workflow on branch '{branch}' in {self.hot_api_repo}")
-        workflow_run = self._get_latest_workflow_run(self.hot_api_repo, branch, 'qa build')
+    def _format_workflow_time(self, iso_timestamp: str) -> str:
+        if not iso_timestamp:
+            return "Unknown time"
+        
+        try:
+            utc_dt = datetime.fromisoformat(iso_timestamp.replace('Z', '+00:00'))
+            local_dt = utc_dt.replace(tzinfo=timezone.utc).astimezone()
+            return local_dt.strftime("%d-%m-%Y %H:%M:%S")
+        except Exception:
+            return iso_timestamp
+    
+    def _monitor_workflow(self, repo: str, branch: str, workflow_name: str, extract_tag: bool = False):
+        print(f">> Looking for '{workflow_name}' workflow on branch '{branch}' in {repo}")
+        workflow_run = self._get_latest_workflow_run(repo, branch, workflow_name)
         
         if not workflow_run:
-            raise Exception(f"No 'qa build' workflow found for branch {branch}")
+            raise Exception(f"No '{workflow_name}' workflow found for branch {branch}")
         
         run_id = workflow_run['id']
-        print(f"Found workflow run {run_id} with status: {workflow_run.get('status')}")
-        self._wait_for_workflow_completion(self.hot_api_repo, run_id)
+        status = workflow_run.get('status')
+        created_at = self._format_workflow_time(workflow_run.get('created_at'))
+        updated_at = self._format_workflow_time(workflow_run.get('updated_at'))
         
-        tag = self._extract_tag_from_workflow(self.hot_api_repo, run_id)
+        # Construct the workflow URL
+        workflow_url = f"https://github.com/{repo}/actions/runs/{run_id}"
         
-        return tag
+        print(f"Workflow found (created_at {created_at}) with status: {status}")
+        print(f"Link: {workflow_url}")
+
+        self._wait_for_workflow_completion(repo, run_id)
+        
+        if extract_tag:
+            return self._extract_tag_from_workflow(repo, run_id)
+    
+    def monitor_qa_build(self, branch: str) -> str:        
+        return self._monitor_workflow(self.hot_api_repo, branch, 'qa build', extract_tag=True)
     
     def monitor_spawn_action(self):        
-        workflow_run = self._get_latest_workflow_run(self.qa_env_repo, 'main', 'spawn changed/new areas')
-        
-        if not workflow_run:
-            raise Exception("No 'spawn changed/new areas' workflow found")
-        
-        run_id = workflow_run['id']
-        self._wait_for_workflow_completion(self.qa_env_repo, run_id)
+        self._monitor_workflow(self.qa_env_repo, 'main', 'spawn changed/new areas', extract_tag=False)
     
     def _get_latest_workflow_run(self, repo: str, branch: str, workflow_name: str):
         url = f"{self.base_url}/repos/{repo}/actions/runs"
@@ -66,12 +83,11 @@ class GitHubClient:
                 
                 if status == 'completed':
                     if conclusion == 'success':
-                        print("Workflow completed successfully")
                         return True
                     else:
                         print(f"Workflow failed with conclusion: {conclusion}")
                         return False
-                
+
                 print("Workflow still running, checking again in 30 seconds...")
                 time.sleep(30)
                 

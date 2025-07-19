@@ -72,8 +72,6 @@ class GitOperations:
         with open(env_file, 'w') as f:
             f.write(new_content)
         
-        print(f"Updated {env_file}")
-        print(f"   hot-api-mono: {old_tag} → {tag}")
         return True
     
     def _pull_latest_changes(self):
@@ -111,7 +109,5 @@ class GitOperations:
             self.repo.git.commit('-m', 'Update environment with new tag')
             
             self.repo.git.push('origin', 'main')
-            
-            print("Changes pushed to main branch")
         else:
             print("No changes to commit")

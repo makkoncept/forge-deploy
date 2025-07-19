@@ -19,23 +19,25 @@ def deploy(branch, env):
         github_client = GitHubClient(config_obj.github_token)
         git_ops = GitOperations(config_obj)
         
-        click.echo(f"Starting QA deployment of branch '{branch}' to environment '{env}'")
+        click.echo("=" * 60)
+        click.echo(f">> Starting QA deployment of branch '{branch}' to environment '{env}'")
+        click.echo("=" * 60)
         
-        click.echo("Monitoring 'qa build' action...")
+        click.echo(">> Monitoring 'qa build' action...")
         tag = github_client.monitor_qa_build(branch)
         click.echo(f"Build completed! Tag: {tag}")
         
-        click.echo(f"Updating {env}.yaml with tag {tag}...")
+        click.echo(f">> Updating {env}.yaml with tag {tag}...")
         changes_made = git_ops.update_env_file(env, tag)
         
         if not changes_made:
             click.echo("Tag is already up to date - skipping to deployment monitoring...")
         else:
-            click.echo("\nChanges made:")
+            click.echo("\n>> Changes made:")
             git_ops.show_diff()
             
-            if click.confirm("\nDo you want to commit and push these changes?"):
-                click.echo("Pushing changes to main...")
+            if click.confirm("\n? Do you want to commit and push these changes?"):
+                click.echo(" Pushing changes to main...")
                 git_ops.push_to_main()
             else:
                 click.echo("Deployment cancelled by user")
@@ -43,11 +45,13 @@ def deploy(branch, env):
                     git_ops.reset_changes()
                     click.echo("Changes discarded")
                 return
-        
-        click.echo("Monitoring 'spawn changed/new area' action...")
+
+        click.echo(">> Monitoring 'spawn changed/new area' action...")
         github_client.monitor_spawn_action()
         
-        click.echo("Deployment completed successfully!")
+        click.echo("=" * 60)
+        click.echo("*** Deployment completed successfully! ***")
+        click.echo("=" * 60)
         
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
