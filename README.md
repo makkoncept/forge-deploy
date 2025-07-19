@@ -49,7 +49,7 @@ forge-deploy --branch qa-feature-xyz --env hot-1
 
 - `--branch`, `-b`: QA branch name (required)
 - `--env`, `-e`: Environment to deploy to (e.g., hot-1, hot-2, hot-3) (required)  
-- `--config`, `-c`: Path to config file (default: config.yml)
+- `--yes`, `-y`: Automatically approve commit without asking for confirmation
 
 ### Example Workflow
 
