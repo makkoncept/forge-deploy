@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "forge-deploy"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     {name = "Mayank Nader", email = "mayank.n@hiverhq.com"},
 ]
