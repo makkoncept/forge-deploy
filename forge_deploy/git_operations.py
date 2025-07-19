@@ -55,7 +55,7 @@ class GitOperations:
         if old_tag == tag:
             print(f"Tag is already up to date: {tag}")
             print(f"   No changes needed for {env_file}")
-            return False
+            return False, None
         
         # Use regex to find and replace the hot-api-mono tag while preserving formatting
         # Look for the hot-api-mono service and its tag line
@@ -72,7 +72,7 @@ class GitOperations:
         with open(env_file, 'w') as f:
             f.write(new_content)
         
-        return True
+        return True, old_tag
     
     def _pull_latest_changes(self):
         try:
@@ -102,11 +102,12 @@ class GitOperations:
         except Exception as e:
             print(f"Error resetting changes: {e}")
     
-    def push_to_main(self):
+    def push_to_main(self, env_name: str, old_tag: str, new_tag: str):
         self.repo.git.add('.')
         
         if self.repo.is_dirty():
-            self.repo.git.commit('-m', 'Update environment with new tag')
+            commit_message = f'Updating {env_name}.yaml ({old_tag} -> {new_tag})'
+            self.repo.git.commit('-m', commit_message)
             
             self.repo.git.push('origin', 'main')
         else:

@@ -29,7 +29,7 @@ def deploy(branch, env):
         click.echo(f"Build completed! Tag: {tag}")
         
         click.echo(f">> Updating {env}.yaml with tag {tag}...")
-        changes_made = git_ops.update_env_file(env, tag)
+        changes_made, old_tag = git_ops.update_env_file(env, tag)
         
         if not changes_made:
             click.echo("Tag is already up to date - skipping to deployment monitoring...")
@@ -39,6 +39,7 @@ def deploy(branch, env):
             
             if click.confirm("\n? Do you want to commit and push these changes?"):
                 click.echo(" Pushing changes to main...")
+                git_ops.push_to_main(env, old_tag, tag)
                 click.echo("Waiting for 5 seconds before monitoring deployment...")
                 time.sleep(5)
             else:
