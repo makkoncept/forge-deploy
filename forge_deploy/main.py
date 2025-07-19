@@ -4,6 +4,7 @@ import click
 import os
 import sys
 import traceback
+import time
 
 from forge_deploy.github_client import GitHubClient
 from forge_deploy.git_operations import GitOperations
@@ -38,7 +39,8 @@ def deploy(branch, env):
             
             if click.confirm("\n? Do you want to commit and push these changes?"):
                 click.echo(" Pushing changes to main...")
-                git_ops.push_to_main()
+                click.echo("Waiting for 5 seconds before monitoring deployment...")
+                time.sleep(5)
             else:
                 click.echo("Deployment cancelled by user")
                 if click.confirm("Do you want to discard the changes?"):
