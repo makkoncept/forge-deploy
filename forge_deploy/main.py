@@ -13,7 +13,8 @@ from forge_deploy.config import Config
 @click.command()
 @click.option('--branch', '-b', required=True, help='QA branch name (e.g., qa-feature-xyz)')
 @click.option('--env', '-e', required=True, help='Environment to deploy to (e.g., hot-1, hot-2, hot-3)')
-def deploy(branch, env):
+@click.option('--yes', '-y', is_flag=True, help='Automatically approve commit without asking for confirmation')
+def deploy(branch, env, yes):
     try:
         config_obj = Config()
         
@@ -37,11 +38,11 @@ def deploy(branch, env):
             click.echo("\n>> Changes made:")
             git_ops.show_diff()
             
-            if click.confirm("\n? Do you want to commit and push these changes?"):
+            if yes or click.confirm("\n? Do you want to commit and push these changes?"):
                 click.echo(" Pushing changes to main...")
                 git_ops.push_to_main(env, old_tag, tag)
-                click.echo("Waiting for 5 seconds before monitoring deployment...")
-                time.sleep(5)
+                click.echo("Waiting for 15 seconds before monitoring deployment...")
+                time.sleep(15)
             else:
                 click.echo("Deployment cancelled by user")
                 if click.confirm("Do you want to discard the changes?"):
@@ -54,6 +55,7 @@ def deploy(branch, env):
         
         click.echo("=" * 60)
         click.echo("*** Deployment completed successfully! ***")
+        click.echo(f"QA Dashboard: https://qa-dashboard.hiver.space/areas/{env}")
         click.echo("=" * 60)
         
     except Exception as e:
