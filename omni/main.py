@@ -137,10 +137,19 @@ def pr(branch, title, desc):
             ["git", "rev-list", "--count", f"origin/master..origin/{branch}"],
             capture_output=True, text=True
         )
-        if result.stdout.strip() == "0":
+        commit_count = result.stdout.strip()
+        if commit_count == "0":
             raise click.ClickException(
                 f"Branch '{branch}' has no commits ahead of master. Nothing to review."
             )
+
+        # Auto-generate title from commit message if single commit and no title provided
+        if not title and commit_count == "1":
+            result = subprocess.run(
+                ["git", "log", "--format=%s", "-1", f"origin/master..origin/{branch}"],
+                capture_output=True, text=True
+            )
+            title = result.stdout.strip()
 
         click.echo("=" * 60)
         click.echo(f">> Triggering PR for CodeReview")
@@ -158,8 +167,12 @@ def pr(branch, title, desc):
         }
         client.dispatch_and_monitor("pr-for-codereview.yaml", branch, inputs)
 
+        pr_url = client.find_pr_for_branch(branch)
+
         click.echo("=" * 60)
         click.echo("Code review PR created successfully!")
+        if pr_url:
+            click.echo(f"PR Link: {pr_url}")
         click.echo("=" * 60)
 
     except click.ClickException:

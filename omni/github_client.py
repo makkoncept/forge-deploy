@@ -95,6 +95,16 @@ class GitHubClient:
             print("Workflow still running, checking again in 30 seconds...")
             time.sleep(30)
 
+    def find_pr_for_branch(self, branch):
+        """Find an open PR for the given head branch."""
+        url = f"{self.base_url}/repos/{self.repo}/pulls"
+        params = {"head": f"{self.repo.split('/')[0]}:{branch}", "state": "open"}
+        response = self._make_request("GET", url, params=params)
+        pulls = response.json()
+        if pulls:
+            return pulls[0]["html_url"]
+        return None
+
     def _make_request(self, method, url, **kwargs):
         max_retries = 3
 
