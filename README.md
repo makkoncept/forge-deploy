@@ -10,6 +10,16 @@ cd forge-deploy
 pip install -e .
 ```
 
+### Global Install (Recommended)
+
+Use [pipx](https://pipx.pypa.io/) to install globally without managing venvs:
+
+```bash
+brew install pipx
+pipx ensurepath
+pipx install -e .          # editable: picks up code changes automatically
+```
+
 ## Configuration
 
 Create `~/.config/omni.yml`:
