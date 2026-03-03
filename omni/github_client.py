@@ -4,14 +4,14 @@ from datetime import datetime, timezone
 
 
 class GitHubClient:
-    def __init__(self, token):
+    def __init__(self, token, repo="Grexit/hot-api-mono"):
         self.token = token
         self.base_url = "https://api.github.com"
         self.headers = {
             "Authorization": f"token {token}",
             "Accept": "application/vnd.github.v3+json"
         }
-        self.repo = "Grexit/hot-api-mono"
+        self.repo = repo
 
     def dispatch_and_monitor(self, workflow_file, branch, inputs):
         """Trigger a workflow and monitor it until completion."""

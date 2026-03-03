@@ -11,6 +11,8 @@ from omni.config import Config
 
 VALID_ENVS = ["hot-1", "hot-2", "hot-3", "hot-4", "hot-5", "hot-6"]
 
+SUPPORTED_REPOS = ["Grexit/hot-api-mono", "Grexit/hot-super-admin"]
+
 
 def get_current_branch():
     try:
@@ -21,6 +23,26 @@ def get_current_branch():
         return result.stdout.strip()
     except subprocess.CalledProcessError:
         raise click.ClickException("Not inside a git repository or git is not installed")
+
+
+def detect_repo():
+    """Detect the GitHub repo from the current directory's git remote."""
+    try:
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True, text=True, check=True
+        )
+        remote_url = result.stdout.strip()
+        # Extract org/repo from SSH or HTTPS URLs
+        for repo in SUPPORTED_REPOS:
+            if repo in remote_url or repo.replace("/", "/").lower() in remote_url.lower():
+                return repo
+        raise click.ClickException(
+            f"Current repository is not supported.\n"
+            f"Supported repos: {', '.join(SUPPORTED_REPOS)}"
+        )
+    except subprocess.CalledProcessError:
+        raise click.ClickException("Not inside a git repository or git remote 'origin' not found")
 
 
 def ensure_branch_pushed(branch):
@@ -157,8 +179,9 @@ def pr(branch, title, desc):
                 "Source branch cannot be master"
             )
 
+        repo = detect_repo()
         config = Config()
-        client = GitHubClient(config.github_token)
+        client = GitHubClient(config.github_token, repo=repo)
 
         ensure_branch_pushed(branch)
 
