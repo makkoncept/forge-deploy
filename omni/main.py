@@ -38,6 +38,36 @@ def ensure_branch_pushed(branch):
         click.echo(f"   Pushed '{branch}' to origin")
 
 
+def push_branch_before_deploy(branch):
+    """Push local branch updates to origin before triggering deployment."""
+    local_branch_check = subprocess.run(
+        ["git", "show-ref", "--verify", f"refs/heads/{branch}"],
+        capture_output=True, text=True
+    )
+    if local_branch_check.returncode != 0:
+        raise click.ClickException(
+            f"Local branch '{branch}' not found. "
+            "Please checkout the branch locally before deploying."
+        )
+
+    click.echo(f">> Pushing latest commits for '{branch}'...")
+    push_result = subprocess.run(
+        ["git", "push", "origin", branch],
+        capture_output=True, text=True
+    )
+
+    if push_result.returncode != 0:
+        details = (push_result.stderr or push_result.stdout).strip()
+        raise click.ClickException(
+            f"Failed to push branch '{branch}' before deployment.\n"
+            "The remote branch may contain newer commits. "
+            "Sync your branch and retry. Force push is not attempted.\n"
+            f"{details}"
+        )
+
+    click.echo(f"   Branch '{branch}' is synced with origin")
+
+
 def handle_error(e):
     click.echo(f"Error: {e}", err=True)
     if os.getenv('DEBUG'):
@@ -78,7 +108,7 @@ def deploy(env, branch, qa):
         config = Config()
         client = GitHubClient(config.github_token)
 
-        ensure_branch_pushed(branch)
+        push_branch_before_deploy(branch)
 
         click.echo("=" * 60)
         click.echo(f">> Triggering Forge Release Pipeline")
