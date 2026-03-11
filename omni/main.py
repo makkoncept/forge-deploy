@@ -11,7 +11,7 @@ from omni.config import Config
 
 VALID_ENVS = ["hot-1", "hot-2", "hot-3", "hot-4", "hot-5", "hot-6"]
 
-SUPPORTED_REPOS = ["Grexit/hot-api-mono", "Grexit/hot-super-admin", "GrexIt/helm-charts"]
+SUPPORTED_REPOS = ["Grexit/hot-api-mono", "Grexit/hot-super-admin", "GrexIt/helm-charts", "GrexIt/outlook-ui"]
 
 
 def get_current_branch():
