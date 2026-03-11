@@ -11,7 +11,7 @@ from omni.config import Config
 
 VALID_ENVS = ["hot-1", "hot-2", "hot-3", "hot-4", "hot-5", "hot-6"]
 
-SUPPORTED_REPOS = ["Grexit/hot-api-mono", "Grexit/hot-super-admin"]
+SUPPORTED_REPOS = ["Grexit/hot-api-mono", "Grexit/hot-super-admin", "GrexIt/helm-charts"]
 
 
 def get_current_branch():
@@ -43,6 +43,31 @@ def detect_repo():
         )
     except subprocess.CalledProcessError:
         raise click.ClickException("Not inside a git repository or git remote 'origin' not found")
+
+
+def get_default_branch():
+    """Resolve the default branch for origin from local git metadata."""
+    result = subprocess.run(
+        ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        origin_head = result.stdout.strip()
+        if origin_head.startswith("refs/remotes/origin/"):
+            return origin_head.removeprefix("refs/remotes/origin/")
+
+    for candidate in ("main", "master"):
+        result = subprocess.run(
+            ["git", "show-ref", "--verify", f"refs/remotes/origin/{candidate}"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            return candidate
+
+    raise click.ClickException(
+        "Could not determine the default branch for 'origin'. "
+        "Ensure the remote HEAD is set or that 'origin/main' or 'origin/master' exists locally."
+    )
 
 
 def ensure_branch_pushed(branch):
@@ -174,32 +199,34 @@ def pr(branch, title, desc):
         if branch is None:
             branch = get_current_branch()
 
-        if branch == 'master':
+        repo = detect_repo()
+        target_branch = get_default_branch()
+
+        if branch == target_branch:
             raise click.ClickException(
-                "Source branch cannot be master"
+                f"Source branch cannot be the default branch '{target_branch}'"
             )
 
-        repo = detect_repo()
         config = Config()
         client = GitHubClient(config.github_token, repo=repo)
 
         ensure_branch_pushed(branch)
 
-        # Check if branch has commits ahead of master
+        # Check if branch has commits ahead of the default branch
         result = subprocess.run(
-            ["git", "rev-list", "--count", f"origin/master..origin/{branch}"],
+            ["git", "rev-list", "--count", f"origin/{target_branch}..origin/{branch}"],
             capture_output=True, text=True
         )
         commit_count = result.stdout.strip()
         if commit_count == "0":
             raise click.ClickException(
-                f"Branch '{branch}' has no commits ahead of master. Nothing to review."
+                f"Branch '{branch}' has no commits ahead of {target_branch}. Nothing to review."
             )
 
         # Auto-generate title from commit message if single commit and no title provided
         if not title and commit_count == "1":
             result = subprocess.run(
-                ["git", "log", "--format=%s", "-1", f"origin/master..origin/{branch}"],
+                ["git", "log", "--format=%s", "-1", f"origin/{target_branch}..origin/{branch}"],
                 capture_output=True, text=True
             )
             title = result.stdout.strip()
@@ -207,14 +234,14 @@ def pr(branch, title, desc):
         click.echo("=" * 60)
         click.echo(f">> Triggering PR for CodeReview")
         click.echo(f"   Source : {branch}")
-        click.echo(f"   Target : master")
+        click.echo(f"   Target : {target_branch}")
         if title:
             click.echo(f"   Title  : {title}")
         click.echo("=" * 60)
 
         inputs = {
             "source_branch": branch,
-            "target_branch": "master",
+            "target_branch": target_branch,
             "pr_title": title,
             "pr_description": desc,
         }
